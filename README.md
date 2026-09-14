@@ -1,5 +1,7 @@
 # 🛡️ Safe-Stay — AI Accommodation Safety Platform for Students in India
 
+[![CI](https://github.com/codewithshubham2706/safe_stay/actions/workflows/ci.yml/badge.svg)](https://github.com/codewithshubham2706/safe_stay/actions/workflows/ci.yml)
+
 Safe-Stay helps students across India find verified, structurally-safe PGs & hostels.
 Search **any city or locality in India** (Pune, Hyderabad, your own hometown…), see
 Structural Vulnerability Index (SVI) safety grades on a live map, read student
@@ -26,6 +28,22 @@ audits, verify landlords, and trigger an emergency SOS network.
 | Backend | Node.js, Express 4, JWT auth, bcryptjs |
 | Database | MongoDB (Mongoose 8) — works offline with seed/demo fallback engine |
 | Geocoding | OpenStreetMap Nominatim (proxied + cached server-side) |
+
+## 🤖 CI / CD
+
+Every push to `main` (and every PR) runs the [GitHub Actions workflow](.github/workflows/ci.yml):
+
+1. `npm ci` (with npm cache)
+2. `npm run test:svi` — SVI/MDI calculator unit tests
+3. `npm run build` — full production build
+4. Uploads the built `dist/` as a workflow artifact (7 days)
+
+A red ❌ badge means **don't deploy that commit**. To make deploys wait for CI:
+- **Render**: *Settings → Build & Deploy → Pre-Deploy Command* (paid) or use a
+  [Deploy Hook](https://render.com/docs/deploy-hooks) triggered from the Actions
+  workflow after all steps pass.
+- **Railway**: *Settings → Deploy conditions / Waits for CI* (Hobby plan) or
+  trigger deploys with `railway up` from a CI job instead of auto-deploy.
 
 ## 🚀 Run locally
 
