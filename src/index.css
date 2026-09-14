@@ -1,0 +1,460 @@
+/* ============================================================
+   Safe-Stay — White/Light UI Design System (Default)
+   Dark Mode available via body.theme-dark
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+/* ── CSS Custom Properties (Light = Default) ── */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Outfit', var(--font-sans);
+
+  /* Backgrounds */
+  --bg-app:        #f0f4ff;
+  --bg-panel:      #ffffff;
+  --bg-card:       #ffffff;
+  --bg-card-hover: #f8faff;
+  --bg-input:      #f1f5f9;
+  --bg-chip:       #f1f5f9;
+  --bg-chip-active:rgba(99, 102, 241, 0.1);
+  --bg-overlay:    rgba(30, 40, 80, 0.45);
+
+  /* Borders */
+  --border-base:   #e2e8f0;
+  --border-focus:  #6366f1;
+  --border-card:   #e2e8f0;
+
+  /* Text */
+  --text-primary:  #0f172a;
+  --text-secondary:#475569;
+  --text-muted:    #94a3b8;
+  --text-inverse:  #ffffff;
+
+  /* Brand / Accent */
+  --accent-indigo: #6366f1;
+  --accent-purple: #a855f7;
+  --accent-cyan:   #06b6d4;
+  --accent-emerald:#10b981;
+  --accent-amber:  #f59e0b;
+  --accent-rose:   #f43f5e;
+
+  /* Shadows */
+  --shadow-xs:  0 1px 3px rgba(0,0,0,0.08);
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.12);
+  --shadow-xl:  0 16px 48px rgba(0,0,0,0.15);
+  --shadow-glow:0 0 20px rgba(99,102,241,0.25);
+
+  /* Radius */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
+  --radius-full:9999px;
+
+  /* Semantic soft surfaces (theme-aware badges, cards, callouts) */
+  --panel-solid:   #ffffff;
+  --bg-success-soft: #f0fdf4;
+  --bg-warn-soft:    #fffbeb;
+  --bg-danger-soft:  #fef2f2;
+  --bg-info-soft:    #f8faff;
+  --border-success-soft: #86efac;
+  --border-warn-soft:    #fde68a;
+  --border-danger-soft:  #fca5a5;
+  --border-info-soft:    #e0e7ff;
+  --text-success-strong: #15803d;
+  --text-warn-strong:    #a16207;
+  --text-danger-strong:  #dc2626;
+  --text-info-strong:    #4338ca;
+  --text-label:          #374151;
+}
+
+/* ── Dark Mode Override ── */
+body.theme-dark {
+  --bg-app:        #0b0f19;
+  --bg-panel:      rgba(18, 24, 40, 0.90);
+  --bg-card:       rgba(22, 30, 50, 0.85);
+  --bg-card-hover: rgba(30, 40, 65, 0.95);
+  --bg-input:      rgba(15, 23, 42, 0.70);
+  --bg-chip:       rgba(255,255,255,0.06);
+  --bg-chip-active:rgba(99,102,241,0.25);
+  --bg-overlay:    rgba(0,0,0,0.70);
+
+  --border-base:   rgba(255,255,255,0.10);
+  --border-focus:  #6366f1;
+  --border-card:   rgba(255,255,255,0.09);
+
+  --text-primary:  #f0f6ff;
+  --text-secondary:#94a3b8;
+  --text-muted:    #64748b;
+
+  --shadow-xs:  0 1px 3px rgba(0,0,0,0.4);
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
+  --shadow-xl:  0 16px 48px rgba(0,0,0,0.7);
+
+  /* Semantic soft surfaces — dark variants */
+  --panel-solid:   #111827;
+  --bg-success-soft: rgba(16,185,129,0.12);
+  --bg-warn-soft:    rgba(245,158,11,0.12);
+  --bg-danger-soft:  rgba(244,63,94,0.12);
+  --bg-info-soft:    rgba(99,102,241,0.10);
+  --border-success-soft: rgba(16,185,129,0.45);
+  --border-warn-soft:    rgba(245,158,11,0.45);
+  --border-danger-soft:  rgba(244,63,94,0.45);
+  --border-info-soft:    rgba(99,102,241,0.40);
+  --text-success-strong: #4ade80;
+  --text-warn-strong:    #fbbf24;
+  --text-danger-strong:  #f87171;
+  --text-info-strong:    #a5b4fc;
+  --text-label:          #cbd5e1;
+}
+
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-app);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  transition: background 0.35s ease, color 0.35s ease;
+  overflow-x: hidden;
+}
+
+h1,h2,h3,h4,h5,h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+input, select, textarea, button { font-family: inherit; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-base);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent-indigo); }
+
+/* ── Glass Panel (Navbar / Modal / Drawer) ── */
+.glass-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+
+body.theme-dark .glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ── Glass Card ── */
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  transition: all 0.22s ease;
+  box-shadow: var(--shadow-xs);
+}
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-indigo);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* ══════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
+  box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99,102,241,0.45);
+  filter: brightness(1.06);
+}
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-base);
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  border-color: var(--accent-indigo);
+  background: var(--bg-chip-active);
+  color: var(--accent-indigo);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 13px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #dc2626, #f43f5e);
+  box-shadow: 0 4px 14px rgba(244,63,94,0.35);
+  transition: all 0.2s ease;
+}
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(244,63,94,0.5);
+}
+
+/* ══════════════════════════════════════
+   FORM INPUTS
+══════════════════════════════════════ */
+
+.field-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-base);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.field-input::placeholder { color: var(--text-muted); }
+.field-input:focus {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+
+/* ══════════════════════════════════════
+   MAP MARKER STYLES
+══════════════════════════════════════ */
+
+/* Hostel SVI Pins */
+.map-hostel-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 12px;
+  color: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 2.5px solid #fff;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.map-hostel-pin:hover { transform: scale(1.08); }
+
+.map-hostel-pin.grade-a {
+  background: linear-gradient(135deg,#059669,#10b981);
+  box-shadow: 0 0 14px rgba(16,185,129,0.55);
+}
+.map-hostel-pin.grade-b {
+  background: linear-gradient(135deg,#d97706,#f59e0b);
+  box-shadow: 0 0 14px rgba(245,158,11,0.55);
+}
+.map-hostel-pin.grade-c {
+  background: linear-gradient(135deg,#e11d48,#f43f5e);
+  box-shadow: 0 0 16px rgba(244,63,94,0.7);
+  animation: pulse-danger 2s infinite;
+}
+
+@keyframes pulse-danger {
+  0%   { box-shadow: 0 0 0 0 rgba(244,63,94,0.7); }
+  70%  { box-shadow: 0 0 0 10px rgba(244,63,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(244,63,94,0); }
+}
+
+/* Amenity Pins */
+.map-amenity-pin {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--accent-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  box-shadow: 0 3px 10px rgba(99,102,241,0.3);
+}
+
+/* Signal Pins */
+.map-signal-pin {
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(6px);
+}
+.map-signal-pin.dark-alley {
+  background: rgba(239,68,68,0.15);
+  border: 1.5px solid rgba(239,68,68,0.5);
+  color: #dc2626;
+}
+.map-signal-pin.waterlogging {
+  background: rgba(59,130,246,0.15);
+  border: 1.5px solid rgba(59,130,246,0.5);
+  color: #2563eb;
+}
+
+/* ── Leaflet Overrides ── */
+.leaflet-container {
+  background: var(--bg-app) !important;
+  font-family: var(--font-sans) !important;
+}
+.leaflet-popup-content-wrapper {
+  background: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-base) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-xl) !important;
+  padding: 0 !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 12px !important;
+}
+.leaflet-popup-tip { background: var(--bg-panel) !important; }
+.leaflet-control-zoom {
+  border: 1px solid var(--border-base) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
+  overflow: hidden;
+}
+.leaflet-control-zoom a {
+  background: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  line-height: 30px !important;
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 16px !important;
+}
+.leaflet-control-zoom a:hover { background: var(--bg-chip-active) !important; color: var(--accent-indigo) !important; }
+
+/* ── Badge Chips ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-amber { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+.badge-red   { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.badge-blue  { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+.badge-indigo{ background: #e0e7ff; color: #4338ca; border: 1px solid #a5b4fc; }
+
+/* ── Modal Overlay ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* ── Section Header ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border-base);
+  margin: 16px 0;
+}
+
+/* ── Utility ── */
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+.text-indigo    { color: var(--accent-indigo); }
+.text-emerald   { color: var(--accent-emerald); }
+.text-amber     { color: var(--accent-amber); }
+.text-rose      { color: var(--accent-rose); }
+
+/* ── Spinner (search loading) ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SVI Score Bar ── */
+.svi-bar-track {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-input);
+  overflow: hidden;
+}
+.svi-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
