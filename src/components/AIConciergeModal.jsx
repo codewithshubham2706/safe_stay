@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { fetchAIConciergeRecommendation } from '../services/apiService';
+import { FLAGSHIP_CITIES } from '../../server/flagshipCities.js';
 import { Sparkles, ArrowRight, Bot, CheckCircle2, X } from 'lucide-react';
 
-const cityCoords = {
-  'Kota': true,
-  'Kota - Rajiv Gandhi Nagar': true,
-  'Delhi - North Campus': true,
-  'Delhi - Kalu Sarai (IIT Hub)': true,
-  'Bengaluru - Koramangala': true
-};
+const FLAGSHIP_NAMES = Object.keys(FLAGSHIP_CITIES);
 
 export default function AIConciergeModal({ isOpen, onClose, onApplyRecommendation, initialAnchor = 'Kota', anchorPoint = null, anchorLabel = 'Kota' }) {
   const [step, setStep] = useState(1);
@@ -26,7 +21,7 @@ export default function AIConciergeModal({ isOpen, onClose, onApplyRecommendatio
   const handleCalculate = async () => {
     setCalculating(true);
     try {
-      const usePoint = anchorPoint && (anchorPoint.lat || anchorPoint.lat === 0) && !cityCoords[anchorCity];
+      const usePoint = anchorPoint && (anchorPoint.lat || anchorPoint.lat === 0) && !FLAGSHIP_NAMES.includes(anchorCity);
       const res = await fetchAIConciergeRecommendation({
         maxRent,
         gender,
@@ -82,10 +77,9 @@ export default function AIConciergeModal({ isOpen, onClose, onApplyRecommendatio
               <label style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)', display:'block', marginBottom:6 }}>📍 Anchor Location Hub</label>
               <select value={anchorCity} onChange={e => setAnchorCity(e.target.value)}
                 className="field-input" style={{ fontSize:14 }}>
-                <option value="Kota">Kota – Rajiv Gandhi Nagar (Coaching Hub)</option>
-                <option value="Delhi - North Campus">Delhi – DU North Campus</option>
-                <option value="Delhi - Kalu Sarai (IIT Hub)">Delhi – Kalu Sarai (IIT Hub)</option>
-                <option value="Bengaluru - Koramangala">Bengaluru – Koramangala</option>
+                {Object.entries(FLAGSHIP_CITIES).map(([name, c]) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
               </select>
             </div>
 

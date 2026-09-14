@@ -318,7 +318,7 @@ body.theme-dark .glass-panel {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--panel-solid);
   border: 2px solid var(--accent-indigo);
   display: flex;
   align-items: center;
@@ -327,7 +327,7 @@ body.theme-dark .glass-panel {
   box-shadow: 0 3px 10px rgba(99,102,241,0.3);
 }
 
-/* Signal Pins */
+/* Signal Pins — theme-aware text colors */
 .map-signal-pin {
   padding: 3px 9px;
   border-radius: var(--radius-full);
@@ -337,16 +337,22 @@ body.theme-dark .glass-panel {
   align-items: center;
   gap: 4px;
   backdrop-filter: blur(6px);
+  white-space: nowrap;
 }
 .map-signal-pin.dark-alley {
-  background: rgba(239,68,68,0.15);
-  border: 1.5px solid rgba(239,68,68,0.5);
-  color: #dc2626;
+  background: rgba(239,68,68,0.18);
+  border: 1.5px solid rgba(239,68,68,0.55);
+  color: var(--text-danger-strong);
 }
 .map-signal-pin.waterlogging {
-  background: rgba(59,130,246,0.15);
-  border: 1.5px solid rgba(59,130,246,0.5);
-  color: #2563eb;
+  background: rgba(59,130,246,0.18);
+  border: 1.5px solid rgba(59,130,246,0.55);
+  color: var(--text-info-strong);
+}
+.map-signal-pin.well-lit {
+  background: rgba(16,185,129,0.16);
+  border: 1.5px solid rgba(16,185,129,0.5);
+  color: var(--text-success-strong);
 }
 
 /* ── Leaflet Overrides ── */
@@ -457,4 +463,107 @@ body.theme-dark .glass-panel {
   height: 100%;
   border-radius: var(--radius-full);
   transition: width 0.6s ease;
+}
+
+/* ══════════════════════════════════════
+   MOBILE & RESPONSIVE (≤ 768px)
+   Drawer & modals become bottom sheets;
+   navbar stacks; iOS quirks handled.
+══════════════════════════════════════ */
+.hide-mobile { /* referenced in JSX; hidden only on small screens */ }
+
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+
+  /* Dynamic viewport: no overflow under mobile browser chrome */
+  .app-root { height: 100vh !important; height: 100dvh !important; }
+
+  /* 16px inputs prevent iOS auto-zoom on focus */
+  input, select, textarea { font-size: 16px !important; }
+
+  /* ── Navbar: stacked rows, thumb-friendly ── */
+  .nav-root {
+    top: 8px !important;
+    width: 100% !important;
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+  .nav-root .glass-panel {
+    padding: 8px 10px !important;
+    gap: 8px !important;
+    border-radius: 14px !important;
+  }
+  .nav-search { order: -1; flex: 1 1 100% !important; max-width: none !important; }
+
+  /* ── Map: contain gestures, clear the sheet edges ── */
+  .leaflet-container { overscroll-behavior: contain; }
+  .leaflet-control-zoom { margin-right: 8px !important; margin-bottom: 14px !important; }
+
+  /* ── Hostel drawer → bottom sheet with grab handle ── */
+  .drawer-sheet {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 88vh !important;
+    height: 88dvh !important;
+    border-left: none !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 -12px 40px rgba(0,0,0,0.35) !important;
+    animation: sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.25, 1);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .drawer-sheet::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    z-index: 6;
+  }
+
+  /* ── All modals → bottom sheets ── */
+  .modal-overlay { align-items: flex-end !important; padding: 0 !important; }
+  .modal-overlay > .glass-panel {
+    position: relative !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 90vh !important;
+    max-height: 90dvh !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    padding: 28px 18px 24px !important;
+    animation: sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.25, 1);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal-overlay > .glass-panel::before {
+    content: '';
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--border-base);
+    z-index: 6;
+  }
+
+  /* ── Login form: tighter padding on phones ── */
+  .login-form-panel { padding: 36px 22px !important; }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }

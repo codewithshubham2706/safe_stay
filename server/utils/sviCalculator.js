@@ -1,139 +1,54 @@
 /**
- * Calculates Structural Vulnerability Index (SVI 0-100) and Maintenance Decay Index (MDI 0-100)
- * based on structural audit factors.
+ * Structural Vulnerability Index (SVI 0-100) & Maintenance Decay Index (MDI 0-100)
+ * from structural audit answers. Weights are integers, so scores are integers.
  */
 
-export function calculateAuditScores(auditData) {
-  let svi = 0;
-  let mdi = 0;
+export const SVI_GRADES = {
+  A: 'Grade A (Sound)',
+  B: 'Grade B (Moderate Risk)',
+  CD: 'Grade C/D (Severe Hazard)',
+};
 
-  // 1. Construction Decade Factor
-  switch (auditData.constructionDecade) {
-    case '<1990':
-      svi += 30;
-      break;
-    case '1990-2005':
-      svi += 20;
-      break;
-    case '2006-2018':
-      svi += 10;
-      break;
-    case '>2018':
-      svi += 0;
-      break;
-    default:
-      svi += 10;
-  }
-
-  // 2. Unapproved Floor Additions
-  const floorsBuilt = Number(auditData.floorsBuilt || 1);
-  const floorsPermitted = Number(auditData.floorsPermitted || 1);
-  const extraFloors = Math.max(0, floorsBuilt - floorsPermitted);
-  svi += extraFloors * 25;
-
-  // 3. Basement Hazard Occupancy
-  if (auditData.basementUsage === 'Student Rooms/Library') {
-    svi += 25;
-  } else if (auditData.basementUsage === 'Storage/Parking') {
-    svi += 10;
-  }
-
-  // 4. Fire & Structural Hazards
-  if (auditData.openWiringHazard) svi += 15;
-  if (auditData.structuralCracks) svi += 20;
-  if (auditData.fireExtinguishersExpiredOrMissing) svi += 20;
-  if (Number(auditData.emergencyExitsCount || 1) < 2) svi += 10;
-
-  // Clamp SVI (0-100)
-  const sviScore = Math.min(100, Math.max(0, svi));
-
-  // Determine SVI Grade
-  let sviGrade = 'Grade A (Sound)';
-  if (sviScore > 60) {
-    sviGrade = 'Grade C/D (Severe Hazard)';
-  } else if (sviScore >= 30) {
-    sviGrade = 'Grade B (Moderate Risk)';
-  }
-
-  // --- Maintenance Decay Index (MDI) ---
-  if (auditData.waterSeepageCeilingWalls) mdi += 25;
-  if (auditData.dampnessMoldInRooms) mdi += 25;
-  if (auditData.unrepairedPlumbingIssues) mdi += 20;
-  if (auditData.openWiringHazard) mdi += 15;
-  if (auditData.neglectedSewageHygiene) mdi += 15;
-
-  // Clamp MDI (0-100)
-  const maintenanceDecayScore = Math.min(100, Math.max(0, mdi));
-  const isCriticallyNeglected = maintenanceDecayScore > 50;
-
-  // Deposit Risk Rating
-  let depositRiskRating = 'Safe / Fully Refunded';
-  if (auditData.depositReturnedStatus === 'Refused Refund') {
-    depositRiskRating = 'High Non-Refund Risk';
-  } else if (auditData.depositReturnedStatus === 'Unfair Deductions') {
-    depositRiskRating = 'Unfair Deductions Reported';
-  }
-
-  return {
-    sviScore: Math.round(sviScore * 10) / 10,
-    sviGrade,
-    maintenanceDecayScore: Math.round(maintenanceDecayScore * 10) / 10,
-    isCriticallyNeglected,
-    depositRiskRating
-  };
+// SVI >= 30 → Grade B; SVI > 60 → Grade C/D. Used by audits, listings and UI.
+export function sviGradeFor(sviScore) {
+  if (sviScore > 60) return SVI_GRADES.CD;
+  if (sviScore >= 30) return SVI_GRADES.B;
+  return SVI_GRADES.A;
 }
 
-/**
- * Aggregates multiple audits for a hostel to calculate composite SVI, MDI, and deposit risk
- */
-export function aggregateHostelAudits(audits) {
-  if (!audits || audits.length === 0) {
-    return {
-      sviScore: 10.0,
-      sviGrade: 'Grade A (Sound)',
-      maintenanceDecayScore: 0.0,
-      isCriticallyNeglected: false,
-      depositRiskRating: 'Safe / Fully Refunded'
-    };
-  }
+const DECADE_WEIGHT = { '<1990': 30, '1990-2005': 20, '2006-2018': 10, '>2018': 0 };
+const BASEMENT_WEIGHT = { 'Student Rooms/Library': 25, 'Storage/Parking': 10 };
+const MDI_WEIGHTS = [
+  ['waterSeepageCeilingWalls', 25],
+  ['dampnessMoldInRooms', 25],
+  ['unrepairedPlumbingIssues', 20],
+  ['openWiringHazard', 15],
+  ['neglectedSewageHygiene', 15],
+];
 
-  let totalSVI = 0;
-  let totalMDI = 0;
-  const depositStats = {
-    refused: 0,
-    deductions: 0,
-    returned: 0
-  };
+const clamp100 = (n) => Math.min(100, Math.max(0, n));
 
-  audits.forEach(audit => {
-    const scores = calculateAuditScores(audit);
-    totalSVI += scores.sviScore;
-    totalMDI += scores.maintenanceDecayScore;
+export function calculateAuditScores(a) {
+  const svi = clamp100(
+    (DECADE_WEIGHT[a.constructionDecade] ?? 10) + // unknown decade → mid penalty
+    Math.max(0, Number(a.floorsBuilt || 1) - Number(a.floorsPermitted || 1)) * 25 +
+    (BASEMENT_WEIGHT[a.basementUsage] ?? 0) +
+    (a.openWiringHazard ? 15 : 0) +
+    (a.structuralCracks ? 20 : 0) +
+    (a.fireExtinguishersExpiredOrMissing ? 20 : 0) +
+    (Number(a.emergencyExitsCount || 1) < 2 ? 10 : 0)
+  );
 
-    if (audit.depositReturnedStatus === 'Refused Refund') depositStats.refused++;
-    else if (audit.depositReturnedStatus === 'Unfair Deductions') depositStats.deductions++;
-    else depositStats.returned++;
-  });
-
-  const avgSVI = Math.round((totalSVI / audits.length) * 10) / 10;
-  const avgMDI = Math.round((totalMDI / audits.length) * 10) / 10;
-
-  let sviGrade = 'Grade A (Sound)';
-  if (avgSVI > 60) sviGrade = 'Grade C/D (Severe Hazard)';
-  else if (avgSVI >= 30) sviGrade = 'Grade B (Moderate Risk)';
-
-  let depositRiskRating = 'Safe / Fully Refunded';
-  if (depositStats.refused > 0) {
-    depositRiskRating = 'High Non-Refund Risk';
-  } else if (depositStats.deductions > 0) {
-    depositRiskRating = 'Unfair Deductions Reported';
-  }
+  const mdi = clamp100(MDI_WEIGHTS.reduce((sum, [flag, weight]) => sum + (a[flag] ? weight : 0), 0));
 
   return {
-    sviScore: avgSVI,
-    sviGrade,
-    maintenanceDecayScore: avgMDI,
-    isCriticallyNeglected: avgMDI > 50,
-    depositRiskRating
+    sviScore: svi,
+    sviGrade: sviGradeFor(svi),
+    maintenanceDecayScore: mdi,
+    isCriticallyNeglected: mdi > 50,
+    depositRiskRating:
+      a.depositReturnedStatus === 'Refused Refund' ? 'High Non-Refund Risk'
+      : a.depositReturnedStatus === 'Unfair Deductions' ? 'Unfair Deductions Reported'
+      : 'Safe / Fully Refunded',
   };
 }

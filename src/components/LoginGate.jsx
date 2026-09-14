@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { loginUser } from '../services/apiService';
+import { loginUser, registerUser } from '../services/apiService';
 import { ShieldCheck, Lock, Smartphone, User, Key, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginGate({ onLoginSuccess }) {
@@ -15,7 +15,10 @@ export default function LoginGate({ onLoginSuccess }) {
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, []);
+  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
   const [role, setRole] = useState('student');
+  const [fullName, setFullName] = useState('');
+  const [gender, setGender] = useState('Female');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +31,9 @@ export default function LoginGate({ onLoginSuccess }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await loginUser(email, password, role);
+      const data = mode === 'signup'
+        ? await registerUser({ fullName, email, password, role, gender })
+        : await loginUser(email, password, role);
       if (data?.token) {
         login(data.user, data.token, persistMobile);
         if (onLoginSuccess) onLoginSuccess(data.user);
@@ -36,7 +41,7 @@ export default function LoginGate({ onLoginSuccess }) {
         setError('Authentication failed. Please check credentials.');
       }
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || (mode === 'signup' ? 'Registration failed. Please try again.' : 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -117,7 +122,7 @@ export default function LoginGate({ onLoginSuccess }) {
       </div>
 
       {/* Right login form */}
-      <div style={{
+      <div className="login-form-panel" style={{
         width: '100%',
         maxWidth: 480,
         display: 'flex',
@@ -143,8 +148,26 @@ export default function LoginGate({ onLoginSuccess }) {
           </div>
         </div>
 
-        <h2 style={{ fontSize:26, fontFamily:'var(--font-heading)', color:'var(--text-primary)', marginBottom:6 }}>Welcome back 👋</h2>
-        <p style={{ fontSize:14, color:'var(--text-secondary)', marginBottom:28 }}>Sign in to access live safety data and the AI concierge.</p>
+        <h2 style={{ fontSize:26, fontFamily:'var(--font-heading)', color:'var(--text-primary)', marginBottom:6 }}>
+          {mode === 'signup' ? 'Create your account 🛡️' : 'Welcome back 👋'}
+        </h2>
+        <p style={{ fontSize:14, color:'var(--text-secondary)', marginBottom:28 }}>
+          {mode === 'signup' ? 'Register to save audits, report safely and use the AI concierge.' : 'Sign in to access live safety data and the AI concierge.'}
+        </p>
+
+        {/* Mode Tabs: Sign In / Sign Up */}
+        <div style={{ display:'flex', background:'var(--bg-chip)', borderRadius:12, padding:4, marginBottom:16, gap:4 }}>
+          {[['signin', 'Sign In'], ['signup', 'Create Account']].map(([m, lbl]) => (
+            <button key={m} type="button" onClick={() => { setMode(m); setError(null); }}
+              style={{
+                flex:1, padding:'8px 8px', borderRadius:9, border:'none',
+                fontSize:13, fontWeight:700, cursor:'pointer',
+                background: mode === m ? 'var(--panel-solid)' : 'transparent',
+                color: mode === m ? '#6366f1' : 'var(--text-secondary)',
+                transition:'all 0.2s ease',
+              }}>{lbl}</button>
+          ))}
+        </div>
 
         {/* Role Tabs */}
         <div style={{ display:'flex', background:'var(--bg-chip)', borderRadius:12, padding:4, marginBottom:24, gap:4 }}>
@@ -178,6 +201,19 @@ export default function LoginGate({ onLoginSuccess }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          {mode === 'signup' && (
+            <div>
+              <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text-label)', marginBottom:6 }}>Full Name</label>
+              <input
+                type="text"
+                placeholder="Your full name"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                className="field-input"
+              />
+            </div>
+          )}
+
           <div>
             <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text-label)', marginBottom:6 }}>Email</label>
             <div style={{ position:'relative' }}>
@@ -212,6 +248,17 @@ export default function LoginGate({ onLoginSuccess }) {
             </div>
           </div>
 
+          {mode === 'signup' && (
+            <div>
+              <label style={{ display:'block', fontSize:13, fontWeight:600, color:'var(--text-label)', marginBottom:6 }}>Gender</label>
+              <select value={gender} onChange={e => setGender(e.target.value)} className="field-input">
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          )}
+
           {/* Session Mode */}
           <div style={{ background:'var(--bg-info-soft)', border:'1px solid var(--border-info-soft)', borderRadius:10, padding:'12px 14px' }}>
             <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13 }}>
@@ -227,7 +274,11 @@ export default function LoginGate({ onLoginSuccess }) {
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary" style={{ width:'100%', justifyContent:'center', padding:'13px', fontSize:15 }}>
-            {loading ? 'Authenticating…' : `Sign In as ${role.charAt(0).toUpperCase()+role.slice(1)}`}
+            {loading
+              ? (mode === 'signup' ? 'Creating account…' : 'Authenticating…')
+              : mode === 'signup'
+                ? `Create ${role.charAt(0).toUpperCase()+role.slice(1)} Account`
+                : `Sign In as ${role.charAt(0).toUpperCase()+role.slice(1)}`}
           </button>
         </form>
 

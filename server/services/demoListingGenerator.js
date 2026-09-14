@@ -140,7 +140,6 @@ export function generateListingsForLocation(lng, lat, label = 'India', count = 1
     const roll = rand();
     signals.push({
       _id: `demo_signal_${seed}_${i}`,
-      locality: `${LOCAL_A[Math.floor(rand() * LOCAL_A.length)]} ${LOCAL_B[Math.floor(rand() * LOCAL_B.length)]}, ${cityShort}`,
       location: { type: 'Point', coordinates: [sLng, sLat] },
       monsoonWaterloggingRisk: roll < 0.3,
       streetLightingRating: roll < 0.3 ? 'Bright Main Road' : roll < 0.6 ? 'Dark Narrow Alley' : 'Well Lit',

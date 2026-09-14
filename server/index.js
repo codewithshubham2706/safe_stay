@@ -21,31 +21,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Lightweight in-memory rate limiter (protects registration/auth endpoints)
-// Default: 20 requests per 10 minutes per IP — sized for 1000+ concurrent users.
-const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 20);
-const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 10 * 60 * 1000);
-const rateBuckets = new Map();
-function rateLimit(req, res, next) {
-  const key = `${req.ip}:${req.path}`;
-  const now = Date.now();
-  let bucket = rateBuckets.get(key);
-  if (!bucket || now - bucket.start > RATE_LIMIT_WINDOW_MS) {
-    bucket = { start: now, count: 0 };
-    rateBuckets.set(key, bucket);
-  }
-  bucket.count += 1;
-  if (bucket.count > RATE_LIMIT_MAX) {
-    return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
-  }
-  next();
-}
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, bucket] of rateBuckets) {
-    if (now - bucket.start > RATE_LIMIT_WINDOW_MS) rateBuckets.delete(key);
-  }
-}, RATE_LIMIT_WINDOW_MS).unref();
+// (Auth endpoints are rate-limited inside routes/api.js.)
 
 // ── Fast DB-state gate ──────────────────────────────────────
 // dbState (from ./dbState.js) tracks live mongoose connectivity so routes can
@@ -77,8 +53,6 @@ function connectDB() {
 connectDB();
 
 // API Routes
-app.use('/api/auth/login', rateLimit);
-app.use('/api/auth/register', rateLimit);
 app.use('/api', apiRoutes);
 
 // Health Check

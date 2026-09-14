@@ -34,7 +34,8 @@ audits, verify landlords, and trigger an emergency SOS network.
 Every push to `main` (and every PR) runs the [GitHub Actions workflow](.github/workflows/ci.yml):
 
 1. `npm ci` (with npm cache)
-2. `npm run test:svi` — SVI/MDI calculator unit tests
+2. `npm test` — the executable contract (SVI scoring, registration validation,
+   rate limiting, shared listing engine)
 3. `npm run build` — full production build
 4. Uploads the built `dist/` as a workflow artifact (7 days)
 
@@ -61,8 +62,13 @@ listings instantly (it auto-reconnects to the DB when one becomes available).
 ## 🧪 Tests
 
 ```bash
-npm run test:svi
+npm test
 ```
+
+One zero-dependency, table-driven suite (`server/tests/contract.test.js`):
+each row is a promised behavior or boundary — SVI/MDI scoring weights and grade
+cutoffs, registration validation, rate-limit windows, and the shared listing
+engine (seed vs. deterministic generated listings, filters, distances).
 
 ## 🐳 Docker (app + MongoDB in one command)
 

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { searchPlacesIndia } from '../services/apiService';
+import { FLAGSHIP_CITIES } from '../../server/flagshipCities.js';
 import { Search, Sparkles, LogOut, ShieldCheck, Sun, Moon, MapPin, Loader2 } from 'lucide-react';
 
-const KNOWN_CITIES = ['Kota', 'Delhi - North Campus', 'Delhi - Kalu Sarai (IIT Hub)', 'Bengaluru - Koramangala'];
+const FLAGSHIP_NAMES = Object.keys(FLAGSHIP_CITIES);
 
 export default function FloatingNavbar({
   searchQuery, onSearchChange,
   onOpenAIConcierge,
-  selectedCategory, onSelectCategory,
   genderFilter, onGenderFilterChange,
   activeCity, onCityChange,
   onPlaceSelect,
@@ -63,17 +63,8 @@ export default function FloatingNavbar({
     setShowDropdown(false);
   };
 
-  const categories = [
-    { id: 'all',                    label: '🏡 All Hostels' },
-    { id: 'Gym',                    label: '🏋️ Gyms Nearby' },
-    { id: 'Mess / Tiffin',          label: '🍲 Mess & Tiffin' },
-    { id: 'Grocery / Daily Shop',   label: '🛒 Daily Shops' },
-    { id: 'Library',                label: '📚 Libraries' },
-    { id: 'Pharmacy / Medical',     label: '💊 24/7 Medical' },
-  ];
-
   return (
-    <div style={{
+    <div className="nav-root" style={{
       position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)',
       zIndex: 1000, width: '96%', maxWidth: 1300,
       display: 'flex', flexDirection: 'column', gap: 8, pointerEvents: 'auto',
@@ -81,7 +72,7 @@ export default function FloatingNavbar({
       {/* ── Main Bar ── */}
       <div className="glass-panel" style={{
         padding: '10px 14px',
-        display: 'flex', alignItems: 'center', gap: 10,
+        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', rowGap: 8,
         borderRadius: 16,
       }}>
         {/* Brand */}
@@ -101,7 +92,7 @@ export default function FloatingNavbar({
         </div>
 
         {/* Search — India-wide places with autocomplete */}
-        <div ref={searchBoxRef} style={{ flex:1, position:'relative', maxWidth:380 }}>
+        <div ref={searchBoxRef} className="nav-search" style={{ flex:'1 1 200px', minWidth:200, position:'relative', maxWidth:380 }}>
           <Search size={15} color="#94a3b8" style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', zIndex:2 }}/>
           {placeLoading && (
             <Loader2 size={14} color="#6366f1" style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', zIndex:2, animation:'spin 1s linear infinite' }}/>
@@ -169,14 +160,15 @@ export default function FloatingNavbar({
         {/* Ask AI button */}
         <button onClick={onOpenAIConcierge} className="btn-primary"
           style={{ padding:'8px 14px', fontSize:13, borderRadius:20, flexShrink:0, whiteSpace:'nowrap' }}>
-          <Sparkles size={15}/> ✨ Ask SafeStay AI
+          <Sparkles size={15}/> Ask SafeStay AI
         </button>
 
-        {/* Theme toggle */}
+        {/* Theme toggle (icon-only — full label lives in the tooltip) */}
         <button onClick={onToggleTheme} className="btn-secondary"
-          style={{ padding:'8px 12px', fontSize:12, borderRadius:20, flexShrink:0, gap:6 }}
-          title="Toggle Dark / Light display mode">
-          {themeMode === 'dark' ? <><Sun size={15} color="#f59e0b"/> ☀️ Light</> : <><Moon size={15} color="#6366f1"/> 🌙 Dark</>}
+          style={{ width:36, height:36, borderRadius:'50%', flexShrink:0, justifyContent:'center', padding:0 }}
+          title={themeMode === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
+          aria-label={themeMode === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}>
+          {themeMode === 'dark' ? <Sun size={16} color="#f59e0b"/> : <Moon size={16} color="#6366f1"/>}
         </button>
 
         {/* Gender filter */}
@@ -186,7 +178,7 @@ export default function FloatingNavbar({
             border:'1.5px solid var(--border-base)', borderRadius:16,
             color:'var(--text-primary)', fontSize:12, outline:'none', cursor:'pointer',
           }}>
-          <option value="All">All Categories</option>
+          <option value="All">All Genders</option>
           <option value="Female Only">🚺 Female Only</option>
           <option value="Male Only">🚹 Male Only</option>
           <option value="Co-ed / Unisex">🚻 Co-ed</option>
@@ -199,11 +191,10 @@ export default function FloatingNavbar({
             border:'1.5px solid var(--border-base)', borderRadius:16,
             color:'var(--accent-indigo)', fontSize:12, fontWeight:700, outline:'none', cursor:'pointer',
           }}>
-          {!KNOWN_CITIES.includes(activeCity) && <option value={activeCity}>📍 {activeCity}</option>}
-          <option value="Kota">📍 Kota</option>
-          <option value="Delhi - North Campus">📍 Delhi DU</option>
-          <option value="Delhi - Kalu Sarai (IIT Hub)">📍 Kalu Sarai</option>
-          <option value="Bengaluru - Koramangala">📍 Koramangala</option>
+          {!FLAGSHIP_NAMES.includes(activeCity) && <option value={activeCity}>📍 {activeCity}</option>}
+          {Object.entries(FLAGSHIP_CITIES).map(([name, c]) => (
+            <option key={name} value={name}>📍 {c.label}</option>
+          ))}
         </select>
 
         {/* SOS */}
@@ -253,26 +244,6 @@ export default function FloatingNavbar({
         </div>
       </div>
 
-      {/* ── Category Chips ── */}
-      <div style={{ display:'flex', gap:8, overflowX:'auto', padding:'2px 2px', scrollbarWidth:'none' }}>
-        {categories.map(cat => {
-          const active = selectedCategory === cat.id;
-          return (
-            <button key={cat.id} onClick={() => onSelectCategory(cat.id)}
-              style={{
-                padding:'6px 14px', borderRadius:20, border:'none',
-                fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap',
-                background: active ? 'var(--accent-indigo)' : 'var(--bg-panel)',
-                color: active ? '#fff' : 'var(--text-secondary)',
-                boxShadow: active ? '0 4px 12px rgba(99,102,241,0.3)' : 'var(--shadow-xs)',
-                transform: active ? 'translateY(-1px)' : 'none',
-                transition:'all 0.2s ease',
-              }}>
-              {cat.label}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { FLAGSHIP_CITIES } from '../server/flagshipCities.js';
 import LoginGate from './components/LoginGate';
 import FloatingNavbar from './components/FloatingNavbar';
 import MapDiscovery from './components/MapDiscovery';
@@ -35,11 +36,28 @@ function SafeStayApp() {
   // State
   const [searchQuery, setSearchQuery] = useState('');      // navbar text (place search)
   const [nameFilter, setNameFilter] = useState('');        // explicit "filter listings" text
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [genderFilter, setGenderFilter] = useState('All');
-  const [activeCity, setActiveCity] = useState('Kota');
 
-  const [mapCenter, setMapCenter] = useState([25.1388, 75.8458]); // Default Kota
+  // Map viewport is synced to the URL (shareable geo-search links, browser back/forward)
+  const [mapState, setMapState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const lat = parseFloat(params.get('lat'));
+    const lng = parseFloat(params.get('lng'));
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      return { center: [lat, lng], label: params.get('city') || 'Searched Area' };
+    }
+    return { center: [FLAGSHIP_CITIES.Kota.lat, FLAGSHIP_CITIES.Kota.lng], label: 'Kota' };
+  });
+  const mapCenter = mapState.center;
+  const activeCity = mapState.label;
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('lat', mapCenter[0].toFixed(4));
+    url.searchParams.set('lng', mapCenter[1].toFixed(4));
+    url.searchParams.set('city', activeCity);
+    window.history.replaceState(null, '', url);
+  }, [mapCenter, activeCity]);
   const [hostels, setHostels] = useState([]);
   const [amenities, setAmenities] = useState([]);
   const [signals, setSignals] = useState([]);
@@ -62,27 +80,18 @@ function SafeStayApp() {
     }
   }, [isAuthenticated, hasRunInitialAI]);
 
-  // City center mapping
-  const cityCoords = {
-    'Kota': [25.1388, 75.8458],
-    'Delhi - North Campus': [28.6942, 77.2095],
-    'Delhi - Kalu Sarai (IIT Hub)': [28.5447, 77.1926],
-    'Bengaluru - Koramangala': [12.9352, 77.6245]
-  };
-
+  // Flagship city picked from the navbar dropdown
   const handleCityChange = (city) => {
-    setActiveCity(city);
-    const coords = cityCoords[city] || cityCoords['Kota'];
-    setMapCenter(coords);
+    const c = FLAGSHIP_CITIES[city] || FLAGSHIP_CITIES.Kota;
+    setMapState({ center: [c.lat, c.lng], label: city });
   };
 
   // India-wide place picked from navbar autocomplete → fly the map there
   const handlePlaceSelect = (place) => {
     if (!place || typeof place.lat !== 'number' || typeof place.lng !== 'number') return;
-    setActiveCity(place.name || place.displayName?.split(',')[0] || 'Searched Area');
     setSearchQuery('');
     setNameFilter(''); // fresh area: clear any hostel-name filter
-    setMapCenter([place.lat, place.lng]);
+    setMapState({ center: [place.lat, place.lng], label: place.name || place.displayName?.split(',')[0] || 'Searched Area' });
   };
 
   // Fetch Spatial Data
@@ -93,8 +102,8 @@ function SafeStayApp() {
       searchSpatialHostels({
         lat: mapCenter[0],
         lng: mapCenter[1],
+        city: activeCity,
         gender: genderFilter,
-        category: selectedCategory,
         aiQuery: nameFilter
       }).then(data => {
         if (data) {
@@ -106,13 +115,13 @@ function SafeStayApp() {
     }, 300); // 300ms debounced spatial query
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, mapCenter, genderFilter, selectedCategory, nameFilter]);
+  }, [isAuthenticated, mapCenter, genderFilter, nameFilter]);
 
   const handleApplyAIRecommendation = (result, prefs) => {
     if (result && result.recommendedCenter) {
       // Leaflet uses [lat, lng]
       const [lng, lat] = result.recommendedCenter;
-      setMapCenter([lat, lng]);
+      setMapState({ center: [lat, lng], label: activeCity });
     }
     if (prefs.gender) setGenderFilter(prefs.gender);
     if (result.hostels && result.hostels.length > 0) {
@@ -125,14 +134,12 @@ function SafeStayApp() {
   }
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+    <div className="app-root" style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       {/* Floating Spatial Navigation Bar */}
       <FloatingNavbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onOpenAIConcierge={() => setShowAIConcierge(true)}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
         genderFilter={genderFilter}
         onGenderFilterChange={setGenderFilter}
         activeCity={activeCity}
@@ -169,7 +176,7 @@ function SafeStayApp() {
         isOpen={showAIConcierge}
         onClose={() => setShowAIConcierge(false)}
         onApplyRecommendation={handleApplyAIRecommendation}
-        initialAnchor={cityCoords[activeCity] ? activeCity : 'Kota'}
+        initialAnchor={FLAGSHIP_CITIES[activeCity] ? activeCity : 'Kota'}
         anchorPoint={{ lat: mapCenter[0], lng: mapCenter[1] }}
         anchorLabel={activeCity}
       />

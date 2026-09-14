@@ -1,6 +1,25 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { ShieldCheck, Dumbbell, Utensils, BookOpen, ShoppingBag, Pill, AlertTriangle, CloudRain, Sun, Phone, MessageSquare } from 'lucide-react';
+
+// Tile provider per theme — no API keys required.
+// Light: Google roadmap tiles. Dark: Esri World Dark Gray Canvas (Carto now
+// demands an API key; Esri's canvas is free and covers zoom 0-16, upscaled beyond).
+function tileConfigFor(themeMode) {
+  if (themeMode === 'light') {
+    return {
+      url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google Maps & SafeStay Spatial Engine',
+      options: { maxZoom: 20 },
+      label: 'Google Maps Roadmap',
+    };
+  }
+  return {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri & SafeStay Spatial Engine',
+    options: { maxZoom: 20, maxNativeZoom: 16 },
+    label: 'SafeStay Dark Spatial Vector',
+  };
+}
 
 export default function MapDiscovery({
   center = [25.1388, 75.8458],
@@ -26,26 +45,23 @@ export default function MapDiscovery({
       zoomControl: false
     });
 
-    // Google Maps Tile Layer URL configuration
-    // lyrs=m is Google Maps Standard Roadmap, lyrs=r is Google Roadmap Dark/Styled
-    const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    const lightGoogleTileUrl = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
-
-    const tileUrl = themeMode === 'light' ? lightGoogleTileUrl : darkTileUrl;
-    const attribution = themeMode === 'light' ? '&copy; Google Maps & SafeStay Spatial Engine' : '&copy; SafeStay Spatial Engine';
-
-    tileLayerRef.current = L.tileLayer(tileUrl, {
-      attribution,
-      maxZoom: 20,
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    }).addTo(map);
+    const { url, attribution, options } = tileConfigFor(themeMode);
+    tileLayerRef.current = L.tileLayer(url, { attribution, ...options }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     markersLayerGroup.current = L.layerGroup().addTo(map);
     leafletMapInstance.current = map;
 
+    // The container can still be settling when the map mounts (post-login
+    // layout swap); re-measure once so zoom 15 is actually applied.
+    const settle = setTimeout(() => {
+      map.invalidateSize();
+      map.setView(center, 15);
+    }, 150);
+
     return () => {
+      clearTimeout(settle);
       if (leafletMapInstance.current) {
         leafletMapInstance.current.remove();
         leafletMapInstance.current = null;
@@ -61,17 +77,8 @@ export default function MapDiscovery({
       leafletMapInstance.current.removeLayer(tileLayerRef.current);
     }
 
-    const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    const lightGoogleTileUrl = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
-
-    const tileUrl = themeMode === 'light' ? lightGoogleTileUrl : darkTileUrl;
-    const attribution = themeMode === 'light' ? '&copy; Google Maps & SafeStay Spatial Engine' : '&copy; SafeStay Spatial Engine';
-
-    tileLayerRef.current = L.tileLayer(tileUrl, {
-      attribution,
-      maxZoom: 20,
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    }).addTo(leafletMapInstance.current);
+    const { url, attribution, options } = tileConfigFor(themeMode);
+    tileLayerRef.current = L.tileLayer(url, { attribution, ...options }).addTo(leafletMapInstance.current);
 
   }, [themeMode]);
 
@@ -112,7 +119,8 @@ export default function MapDiscovery({
         iconAnchor: [60, 16]
       });
 
-      const marker = L.marker([lat, lng], { icon: customIcon });
+      // Hostel pins sit above amenities/signals so they're always clickable
+      const marker = L.marker([lat, lng], { icon: customIcon, zIndexOffset: 1000 });
 
       // Popup content
       const popupHtml = `
@@ -162,7 +170,7 @@ export default function MapDiscovery({
         iconAnchor: [16, 16]
       });
 
-      const marker = L.marker([lat, lng], { icon: amenityIcon });
+      const marker = L.marker([lat, lng], { icon: amenityIcon, zIndexOffset: -400 });
       marker.bindPopup(`
         <div style="font-size: 12px;">
           <strong>${iconSymbol} ${amenity.name}</strong><br/>
@@ -182,7 +190,7 @@ export default function MapDiscovery({
       } else if (sig.streetLightingRating === 'Dark Narrow Alley') {
         signalHtml = `<div class="map-signal-pin dark-alley">⚠️ Dark Alley</div>`;
       } else {
-        signalHtml = `<div class="map-signal-pin" style="background: rgba(16,185,129,0.2); border: 1px solid #10b981; color: #10b981;">💡 Well Lit</div>`;
+        signalHtml = `<div class="map-signal-pin well-lit">💡 Well Lit</div>`;
       }
 
       const signalIcon = L.divIcon({
@@ -192,7 +200,7 @@ export default function MapDiscovery({
         iconAnchor: [55, 12]
       });
 
-      const marker = L.marker([lat, lng], { icon: signalIcon });
+      const marker = L.marker([lat, lng], { icon: signalIcon, zIndexOffset: -800 });
       markersLayerGroup.current.addLayer(marker);
     });
 
@@ -216,7 +224,7 @@ export default function MapDiscovery({
         alignItems: 'center',
         gap: '6px'
       }}>
-        🗺️ {themeMode === 'light' ? 'Google Maps Roadmap' : 'SafeStay Dark Spatial Vector'}
+        🗺️ {tileConfigFor(themeMode).label}
       </div>
 
       {/* Map Legend Overlay */}

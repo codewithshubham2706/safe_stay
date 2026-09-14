@@ -1,7 +1,41 @@
-import React, { useState } from 'react';
+import React, { useRef } from 'react';
 import { ShieldCheck, Phone, MessageSquare, X, Image, ClipboardList, Sparkles, AlertTriangle, ChevronRight } from 'lucide-react';
 
 export default function HostelDetailDrawer({ hostel, onClose, onOpenAuditModal, onOpenLandlordVerify, onOpenPaidCommunity, onTriggerSOS }) {
+  // Swipe-down-to-dismiss (mobile bottom sheet): drag from the handle/cover zone
+  const sheetRef = useRef(null);
+  const drag = useRef(null);
+
+  const onTouchStart = (e) => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    const y = e.touches[0].clientY;
+    if (y - sheet.getBoundingClientRect().top > 64) return; // only the top zone drags
+    drag.current = { startY: y, dy: 0 };
+  };
+  const onTouchMove = (e) => {
+    if (!drag.current || !sheetRef.current) return;
+    drag.current.dy = e.touches[0].clientY - drag.current.startY;
+    if (drag.current.dy > 0) {
+      sheetRef.current.style.transition = 'none';
+      sheetRef.current.style.transform = `translateY(${drag.current.dy}px)`;
+    }
+  };
+  const onTouchEnd = () => {
+    if (!drag.current || !sheetRef.current) return;
+    const { dy } = drag.current;
+    drag.current = null;
+    const sheet = sheetRef.current;
+    sheet.style.transition = 'transform 0.22s ease';
+    if (dy > 110) {
+      sheet.style.transform = 'translateY(100%)';
+      setTimeout(onClose, 200);
+    } else {
+      sheet.style.transform = '';
+      setTimeout(() => { if (sheetRef.current) sheetRef.current.style.transition = ''; }, 240);
+    }
+  };
+
   if (!hostel) return null;
 
   const owner = hostel.owner || {};
@@ -15,7 +49,15 @@ export default function HostelDetailDrawer({ hostel, onClose, onOpenAuditModal, 
   const mdiColor   = mdi > 50 ? 'var(--text-danger-strong)' : mdi > 20 ? 'var(--text-warn-strong)' : 'var(--text-success-strong)';
 
   return (
-    <div style={{
+    <div
+      ref={sheetRef}
+      className="drawer-sheet"
+      role="dialog"
+      aria-label={`${hostel.name} details`}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      style={{
       position: 'fixed', top: 0, right: 0, bottom: 0, width: '100%', maxWidth: 500,
       zIndex: 1500, background: 'var(--panel-solid)',
       borderLeft: '1px solid var(--border-base)',
@@ -29,7 +71,7 @@ export default function HostelDetailDrawer({ hostel, onClose, onOpenAuditModal, 
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.55) 100%)' }}/>
 
         {/* Close */}
-        <button onClick={onClose}
+        <button onClick={onClose} aria-label="Close hostel details"
           style={{ position:'absolute', top:14, right:14, width:34, height:34, borderRadius:'50%', background:'rgba(255,255,255,0.95)', border:'none', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,0.15)' }}>
           <X size={18} color="#374151"/>
         </button>
@@ -82,14 +124,14 @@ export default function HostelDetailDrawer({ hostel, onClose, onOpenAuditModal, 
         <div style={{ display:'flex', gap:10 }}>
           <a href={`tel:${owner.phone || '+919829012345'}`} className="btn-primary"
             style={{ flex:1, justifyContent:'center', padding:12, textDecoration:'none' }}>
-            <Phone size={17}/> 📞 Call Owner
+            <Phone size={17}/> Call Owner
           </a>
           <a href={`https://wa.me/${owner.whatsapp || '919829012345'}?text=Hi, I found ${encodeURIComponent(hostel.name)} on Safe-Stay.`}
             target="_blank" rel="noopener noreferrer"
+            className="btn-secondary"
             style={{
-              flex:1, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:8,
-              padding:12, borderRadius:12, border:'1.5px solid #86efac',
-              background:'#f0fdf4', color:'#16a34a', fontWeight:700, fontSize:14, textDecoration:'none',
+              flex:1, justifyContent:'center', padding:12, textDecoration:'none',
+              borderColor:'var(--border-success-soft)', background:'var(--bg-success-soft)', color:'var(--text-success-strong)',
             }}>
             <MessageSquare size={17}/> WhatsApp
           </a>

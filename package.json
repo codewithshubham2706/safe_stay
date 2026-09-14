@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "server": "node server/index.js",
     "seed": "node server/seed.js",
-    "test:svi": "node server/tests/sviCalculator.test.js"
+    "test": "node server/tests/contract.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
